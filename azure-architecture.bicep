@@ -33,6 +33,12 @@ resource website 'Microsoft.Web/sites@2024-04-01' = {
   properties: {
     serverFarmId: serverFarm.id
   }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${websiteManagedIdentity.id}': {}
+    }
+  }
 }
 
 var featureCountIsEven = websiteConfigurationSettings.awesomeFeatureCount % 2 == 0
@@ -48,22 +54,25 @@ resource websiteSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   }
 }
 
-// resource logAnalysiticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-//   location: resourceGroup().location
-//   name: 'fakeCompanyLogAnalytics'
-// }
-
-resource logAnalysiticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
-  scope: resourceGroup()
-  name: 'fakeCompanyLogAnalytics'
+module applicationInsightsModule 'modules/applicationInisghts.bicep' = {
+  name: 'applicationInsightsDeployment'
+  params: {
+    environmentName: environmentName
+    location: location
+  }
 }
 
-resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: 'fakeCompanyPortal-${environmentName}'
+resource websiteManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'websiteManagedIdentity-${environmentName}'
   location: location
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    WorkspaceResourceId: logAnalysiticsWorkspace.id
+}
+
+module sqlDatabaseModule 'modules/sqlDatabase.bicep' = {
+  name: 'sqlDatabaseDeployment'
+  params: {
+    environmentName: environmentName
+    location: location
+    administratorManagedIdentityName: websiteManagedIdentity.name
+    administratorManagedIdentityClientId: websiteManagedIdentity.properties.clientId
   }
 }

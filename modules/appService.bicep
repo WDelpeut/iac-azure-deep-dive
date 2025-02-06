@@ -61,3 +61,4 @@ resource websiteManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentitie
 
 output websiteManagedIdentityName string = websiteManagedIdentity.name
 output websiteManagedIdentityClientId string = websiteManagedIdentity.properties.clientId
+output websiteManagedIdentityPrincipalId string = websiteManagedIdentity.properties.principalId

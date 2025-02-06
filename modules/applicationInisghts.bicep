@@ -2,6 +2,8 @@
 param environmentName string
 param location string
 
+param metricsPublisherPrincipalId string
+
 // resource logAnalysiticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 //   location: resourceGroup().location
 //   name: 'fakeCompanyLogAnalytics'
@@ -19,6 +21,21 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   properties: {
     Application_Type: 'web'
     WorkspaceResourceId: logAnalysiticsWorkspace.id
+  }
+}
+
+var metricsPublisherWellKnownId = '3913510d-42f4-4e42-8a64-420c390055eb'
+
+resource metricsPublisherRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' existing = {
+  name: metricsPublisherWellKnownId
+}
+
+resource monitoringMetricsPublisherRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(applicationInsights.name, metricsPublisherPrincipalId, metricsPublisherRoleDefinition.id)
+  scope: applicationInsights
+  properties: {
+    principalId: metricsPublisherPrincipalId
+    roleDefinitionId: metricsPublisherRoleDefinition.id
   }
 }
 

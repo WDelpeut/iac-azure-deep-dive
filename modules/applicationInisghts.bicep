@@ -21,3 +21,42 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: logAnalysiticsWorkspace.id
   }
 }
+
+var metricDetails = [
+  {
+    metricName: 'Failed requests'
+    metricIdentifier: 'requests/failed'
+  }
+  {
+    metricName: 'Failed dependencies'
+    metricIdentifier: 'dependencies/failed'
+  }
+]
+
+resource failuresAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = [for metricDetail in metricDetails: if (environmentName == 'prod') {
+  name: 'Rule for ${metricDetail.metricName}'
+  location: 'global'
+  properties: {
+    severity: 3
+    enabled: true
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT5M'
+    scopes: [
+      applicationInsights.id
+    ]
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          threshold: 1
+          name: metricDetail.metricName
+          metricNamespace: 'microsoft.insights/components'
+          metricName: metricDetail.metricIdentifier
+          operator: 'GreaterThan'
+          timeAggregation: 'Count'
+          criterionType: 'StaticThresholdCriterion'
+        }
+      ]
+    }
+  }
+}]

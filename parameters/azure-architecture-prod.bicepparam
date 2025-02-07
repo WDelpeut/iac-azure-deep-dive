@@ -1,4 +1,4 @@
-using 'azure-architecture.bicep'
+using '../azure-architecture.bicep'
 
 param environmentName =  'prod'
 
